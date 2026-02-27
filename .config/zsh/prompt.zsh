@@ -9,7 +9,7 @@ C_PATH="%F{#83a598}"
 C_GIT="%F{#d3869b}"
 C_NODE="%F{#fabd2f}"
 C_PHP="%F{#b8bb26}"
-C_TIME="%F{#fb4934}"
+C_TIME="%F{#d4be98}"
 C_ARROW="%F{#8ec07c}"
 C_RESET="%f"
 
