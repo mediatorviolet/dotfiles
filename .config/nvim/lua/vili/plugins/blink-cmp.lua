@@ -93,6 +93,20 @@ return {
         lsp = {
           min_keyword_length = 2,
           score_offset = 0,
+          deduplicate = {
+            enabled = true,
+            filter = function(items, ctx)
+              local seen = {}
+              return vim.tbl_filter(function(item)
+                local uri = item.resolve and item.resolve.uri or item.uri
+                if seen[uri] then
+                  return false
+                end
+                seen[uri] = true
+                return true
+              end, items)
+            end,
+          },
         },
         path = {
           min_keyword_length = 2,
