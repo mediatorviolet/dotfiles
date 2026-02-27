@@ -1,16 +1,17 @@
 # =====================
-# COLORS (Gruvbox)
+# COLORS (Gruvbox clean)
 # =====================
 
-FG_MMMM="%F{#32302f}"
-FG_RESET="%f"
-BG_AQUA="%K{#8ec07c}"
-BG_PURPLE="%K{#d3869b}"
-BG_BLUE="%K{#83a598}"
-BG_GREEN="%K{#b8bb26}"
-BG_YELLOW="%K{#fabd2f}"
-BG_RED="%K{#fb4934}"
-BG_RESET="%k"
+autoload -Uz colors
+colors
+
+C_PATH="%F{#83a598}"
+C_GIT="%F{#d3869b}"
+C_NODE="%F{#fabd2f}"
+C_PHP="%F{#b8bb26}"
+C_TIME="%F{#fb4934}"
+C_ARROW="%F{#8ec07c}"
+C_RESET="%f"
 
 # =====================
 # GIT STATUS
@@ -21,10 +22,7 @@ setopt prompt_subst
 
 zstyle ':vcs_info:git:*' enable git
 zstyle ':vcs_info:git:*' formats '%b'
-zstyle ':vcs_info:git:*' actionformats '%b|%a'
-zstyle ':vcs_info:git:*' check-for-changes true
-zstyle ':vcs_info:git:*' stagedstr '●'
-zstyle ':vcs_info:git:*' unstagedstr '✚'
+zstyle ':vcs_info:*' check-for-changes true
 
 precmd() {
   vcs_info
@@ -36,22 +34,25 @@ preexec() {
 }
 
 git_segment() {
-  if [[ -n "$vcs_info_msg_0_" ]]; then
-    local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-    local status=$(git status --porcelain 2>/dev/null)
+  [[ -z "$vcs_info_msg_0_" ]] && return
 
-    local dirty=""
-    [[ -n "$status" ]] && dirty="✚"
+  local branch="$vcs_info_msg_0_"
+  local dirty=""
+  local ahead=0
+  local behind=0
 
-    local ahead=$(git rev-list --count @{upstream}..HEAD 2>/dev/null)
-    local behind=$(git rev-list --count HEAD..@{upstream} 2>/dev/null)
+  git diff --quiet --ignore-submodules HEAD 2>/dev/null || dirty="✚"
 
-    local flags=""
-    [[ $ahead -gt 0 ]] && flags+="↑$ahead"
-    [[ $behind -gt 0 ]] && flags+="↓$behind"
-
-    echo "${BG_PURPLE}${FG_MMMM}  $branch $dirty $flags ${FG_RESET}${BG_RESET}"
+  if git rev-parse @{upstream} >/dev/null 2>&1; then
+    ahead=$(git rev-list --count @{upstream}..HEAD 2>/dev/null)
+    behind=$(git rev-list --count HEAD..@{upstream} 2>/dev/null)
   fi
+
+  local flags=""
+  [[ $ahead -gt 0 ]] && flags+=" ↑$ahead"
+  [[ $behind -gt 0 ]] && flags+=" ↓$behind"
+
+  echo " ${C_GIT} ${branch}${dirty}${flags}${C_RESET}"
 }
 
 # =====================
@@ -60,12 +61,13 @@ git_segment() {
 
 node_segment() {
   [[ -f package.json ]] || return
-  echo "${BG_YELLOW}${FG_MMMM}  $(node -v | sed 's/v//') ${FG_RESET}${BG_RESET}"
+  echo " ${C_NODE} $(node -v 2>/dev/null | sed 's/v//')${C_RESET}"
 }
 
 php_segment() {
-  [[ -f composer.json ]] || return
-  echo "${BG_BLUE}${FG_MMMM}  $(php -r 'echo PHP_MAJOR_VERSION.\".\".PHP_MINOR_VERSION;') ${FG_RESET}${BG_RESET}"
+  [[ -f composer.json || -f artisan ]] || return
+  local version=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;" 2>/dev/null)
+  echo " ${C_PHP} ${version}${C_RESET}"
 }
 
 # =====================
@@ -73,13 +75,27 @@ php_segment() {
 # =====================
 
 duration_segment() {
-  [[ $CMD_DURATION -gt 2 ]] || return
-  echo "${BG_RED}${FG_MMMM} ⏱ ${CMD_DURATION}s ${FG_RESET}${BG_RESET}"
+  (( CMD_DURATION < 2 )) && return
+
+  local seconds=$CMD_DURATION
+  local days=$(( seconds / 86400 ))
+  local hours=$(( (seconds % 86400) / 3600 ))
+  local mins=$(( (seconds % 3600) / 60 ))
+  local secs=$(( seconds % 60 ))
+
+  local formatted=""
+
+  (( days > 0 )) && formatted+="${days}d "
+  (( hours > 0 )) && formatted+="${hours}h "
+  (( mins > 0 )) && formatted+="${mins}m "
+  (( secs > 0 )) && formatted+="${secs}s"
+
+  echo " ${C_TIME}⏱ ${formatted}${C_RESET}"
 }
 
 # =====================
 # PROMPT
 # =====================
 
-PROMPT='%B${BG_AQUA}${FG_MMMM} %~ ${FG_RESET}${BG_RESET}$(git_segment)$(node_segment)$(php_segment)$(duration_segment)
-${FG_GREEN}❯ ${FG_RESET}%b '
+PROMPT='${C_PATH}%~${C_RESET}$(git_segment)$(node_segment)$(php_segment)$(duration_segment)
+${C_ARROW}❯ ${C_RESET}'
