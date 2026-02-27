@@ -97,5 +97,6 @@ duration_segment() {
 # PROMPT
 # =====================
 
-PROMPT='${C_PATH}%~${C_RESET}$(git_segment)$(node_segment)$(php_segment)$(duration_segment)
+PROMPT='
+${C_PATH}%~${C_RESET}$(git_segment)$(node_segment)$(php_segment)$(duration_segment)
 ${C_ARROW}❯ ${C_RESET}'
